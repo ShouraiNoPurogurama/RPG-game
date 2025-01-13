@@ -47,6 +47,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\Player.cs" />
+    <Compile Include="Assets\Enemy_Skeleton.cs" />
     <Compile Include="Assets\Entity.cs" />
     <Compile Include="Assets\PlayerAnimationEvents.cs" />
     <Reference Include="UnityEngine">
