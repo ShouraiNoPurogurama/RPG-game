@@ -149,4 +149,9 @@ public class Player : Entity
         Animator.SetBool("isAttacking", isAttacking);
         Animator.SetInteger("comboCounter", comboCounter);
     }
+
+    protected override void CollisionChecks()
+    {
+        base.CollisionChecks();
+    }
 }
