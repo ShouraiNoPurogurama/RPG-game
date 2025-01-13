@@ -1,85 +1,60 @@
-using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 
-public class Player : MonoBehaviour
+public class Player : Entity
 {
     private float _xInput;
+    [Header("Move info")]
     [SerializeField] private float jumpForce = 5;
     [SerializeField] private float moveSpeed = 5;
 
-    [Header("Dash info")] 
-    [SerializeField] private float dashSpeed = 50;
-    [SerializeField] private float dashDuration = 0.05f;
-    [SerializeField] private float dashTime = 1;
+    [Header("Dash info")] [SerializeField] public float dashSpeed = 25;
+    [SerializeField] public float dashDuration = 0.05f;
+    [SerializeField] public float dashTime = 1;
 
-    private int _facingDirection = 1;
-    private bool _facingRight = true;
+    [SerializeField] public float dashCooldown = 2;
+    [SerializeField] public float dashCooldownTimer;
+    
 
-    private Rigidbody2D _rb;
-    private Animator _animator;
-
-    [Header("Collision info")] 
-    [SerializeField] private float groundCheckDistance;
-
-    /// <summary>
-    /// Layer contains Colliders that need to be detected by Physics2D.Raycast/>.
-    /// </summary>
-    [SerializeField] private LayerMask whatIsGround;
-
-    private bool _isGrounded;
-
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    [FormerlySerializedAs("comboTimeCounter")]
+    [Header("Attack info")] 
+    [SerializeField] private float comboTimeWindow;
+    [SerializeField] private float comboTime = 1f;
+    private bool isAttacking;
+    private int comboCounter;
+    
+    protected override void Start()
     {
-        _rb = GetComponent<Rigidbody2D>();
-        _animator = GetComponentInChildren<Animator>();
+        base.Start();
     }
 
     // Update is called once per frame
-    void Update()
+    protected override void Update()
     {
+        base.Update();
         Movement();
         CheckInput();
-        CollisionChecks();
-
+        
         dashTime -= Time.deltaTime;
-        if (Input.GetKeyDown(KeyCode.LeftShift))
-        {
-            dashTime = dashDuration;
-        }
-
-        if (dashTime > 0)
-        {
-        }
-
+        dashCooldownTimer -= Time.deltaTime;
+        comboTimeWindow -= Time.deltaTime;
+        
         FlipController();
         AnimatorControllers();
     }
 
     /// <summary>
-    /// Checks for ground collision beneath the player and updates the <see cref="_isGrounded"/> state.
+    /// This method will be called by the AnimationTrigger at the ending frame of attack animations
     /// </summary>
-    /// <remarks>
-    /// This method uses a 2D raycast to determine if the player is in contact with the ground. 
-    /// The raycast is projected downward from the player's position over a specified distance, 
-    /// and it checks for collision with layers defined in <see cref="whatIsGround"/>.
-    /// </remarks>
-    /// <example>
-    /// Example usage:
-    /// <code>
-    /// private void Update()
-    /// {
-    ///     CollisionChecks();
-    ///     if (_isGrounded)
-    ///     {
-    ///         Debug.Log("Player is grounded.");
-    ///     }
-    /// }
-    /// </code>
-    /// </example>
-    private void CollisionChecks()
+    public void AttackOver()
     {
-        _isGrounded = Physics2D.Raycast(transform.position, Vector2.down, groundCheckDistance, whatIsGround);
+        isAttacking = false;
+
+        comboCounter++;
+        if (comboCounter > 2)
+        {
+            comboCounter = 0;
+        }
     }
 
 
@@ -88,9 +63,45 @@ public class Player : MonoBehaviour
         //Get horizontal vector value based on keyboard key down
         _xInput = Input.GetAxisRaw("Horizontal");
 
+        if (Input.GetKeyDown(KeyCode.Mouse0))
+        {
+            StartAttackEvent();
+        }
+
         if (Input.GetKeyDown(KeyCode.Space))
         {
             Jump();
+        }
+
+        if (Input.GetKeyDown(KeyCode.LeftShift))
+        {
+            DashAbility();
+        }
+    }
+
+    private void StartAttackEvent()
+    {
+        if (!IsGrounded)
+        {
+            return;
+        }
+        
+        //Reset comboCounter if Player exceeds the time of comboTimeWindow
+        if (comboTimeWindow <= 0)
+        {
+            comboCounter = 0;
+        }
+            
+        isAttacking = true;
+        comboTimeWindow = comboTime;
+    }
+
+    private void DashAbility()
+    {
+        if (dashCooldownTimer <= 0 && !isAttacking)
+        {
+            dashCooldownTimer = dashCooldown;
+            dashTime = dashDuration;
         }
     }
 
@@ -99,14 +110,18 @@ public class Player : MonoBehaviour
     /// </summary>
     private void Movement()
     {
-        // If dash is in use
-        if (dashTime > 0)
+        if (isAttacking)
         {
-            _rb.linearVelocity = new Vector2(_xInput * dashSpeed, 0);
+            Rb.linearVelocity = new Vector2(0, 0);
+        }
+        // If dash is in use
+        else if (dashTime > 0) 
+        {
+            Rb.linearVelocity = new Vector2(FacingDirection * dashSpeed, 0);
         }
         else
         {
-            _rb.linearVelocity = new Vector2(_xInput * moveSpeed, _rb.linearVelocity.y);
+            Rb.linearVelocity = new Vector2(_xInput * moveSpeed, Rb.linearVelocity.y);
         }
     }
 
@@ -115,8 +130,8 @@ public class Player : MonoBehaviour
     /// </summary>
     private void Jump()
     {
-        if (_isGrounded)
-            _rb.linearVelocity = new Vector2(_rb.linearVelocityX, jumpForce);
+        if (IsGrounded)
+            Rb.linearVelocity = new Vector2(Rb.linearVelocityX, jumpForce);
     }
 
     /// <summary>
@@ -124,46 +139,14 @@ public class Player : MonoBehaviour
     /// </summary>
     private void AnimatorControllers()
     {
-        bool isMoving = _rb.linearVelocity.x != 0;
+        bool isMoving = Rb.linearVelocity.x != 0;
 
-        _animator.SetBool("isMoving", isMoving);
-        _animator.SetBool("isGrounded", _isGrounded);
-        _animator.SetFloat("yVelocity", _rb.linearVelocity.y);
-        _animator.SetBool("isDashing", dashTime > 0);
-    }
-
-    #region Flip character
-
-    /// <summary>
-    /// Flip character to the opposite direction based on current direction
-    /// </summary>
-    private void Flip()
-    {
-        _facingDirection = -_facingDirection;
-        _facingRight = !_facingRight;
-        transform.Rotate(0, 180, 0);
-    }
-
-    private void FlipController()
-    {
-        if (_rb.linearVelocity.x > 0 && !_facingRight)
-        {
-            Flip();
-        }
-        else if (_rb.linearVelocity.x < 0 && _facingRight)
-        {
-            Flip();
-        }
-    }
-
-    #endregion
-
-    /// <summary>
-    /// Draw a vector from Player position to the ground/>
-    /// </summary>
-    private void OnDrawGizmos()
-    {
-        Gizmos.DrawLine(transform.position,
-            new Vector3(transform.position.x, transform.position.y - groundCheckDistance, transform.position.z));
+        Animator.SetFloat("yVelocity", Rb.linearVelocity.y);
+        Animator.SetBool("isMoving", isMoving);
+        Animator.SetBool("isGrounded", IsGrounded);
+        Animator.SetBool("isDashing", dashTime > 0);
+        
+        Animator.SetBool("isAttacking", isAttacking);
+        Animator.SetInteger("comboCounter", comboCounter);
     }
 }

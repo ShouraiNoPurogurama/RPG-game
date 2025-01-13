@@ -130,6 +130,7 @@ GameObject:
   - component: {fileID: 91222318}
   - component: {fileID: 91222319}
   - component: {fileID: 91222320}
+  - component: {fileID: 91222321}
   m_Layer: 0
   m_Name: Animator
   m_TagString: Untagged
@@ -229,6 +230,18 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &91222321
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 91222317}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 83279330ffe40e74b9de368f9748de20, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &264033763
 GameObject:
   m_ObjectHideFlags: 0
@@ -535,7 +548,7 @@ Rigidbody2D:
   m_LinearDamping: 0
   m_AngularDamping: 0.05
   m_GravityScale: 1
-  m_Material: {fileID: 6200000, guid: b625d12165d13074a810e320e2505617, type: 2}
+  m_Material: {fileID: 6200000, guid: 9a4e2aae4321f8b42b4c5986662e0f8c, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -574,15 +587,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 66bf2320b5bb08544b6b43e0f036cec2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  jumpForce: 5
-  moveSpeed: 5
-  dashSpeed: 0
-  dashDuration: 2
-  dashTime: 0
   groundCheckDistance: 1.26
   whatIsGround:
     serializedVersion: 2
     m_Bits: 8
+  IsGrounded: 1
+  jumpForce: 5
+  moveSpeed: 5
+  dashSpeed: 25
+  dashDuration: 0.2
+  dashTime: 0
+  dashCooldown: 0
+  dashCooldownTimer: 0
+  comboTimeWindow: 0
+  comboTime: 1
 --- !u!70 &1292256328
 CapsuleCollider2D:
   m_ObjectHideFlags: 0
